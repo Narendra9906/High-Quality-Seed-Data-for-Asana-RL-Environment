@@ -1,0 +1,4 @@
+Generate a list of 5 marketing tasks for a campaign named "{project_name}".
+Context: B2B Product Launch.
+Format: [Channel] - [Deliverable]
+Example: Social - LinkedIn - Draft launch announcement post

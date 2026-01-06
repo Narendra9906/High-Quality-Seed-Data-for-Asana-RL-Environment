@@ -1,0 +1,3 @@
+Write a realistic task description for a task named "{task_name}".
+Includes a brief context, acceptance criteria, and technical notes if applicable.
+Keep it under 3 sentences.

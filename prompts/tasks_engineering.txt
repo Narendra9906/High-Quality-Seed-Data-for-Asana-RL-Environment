@@ -1,0 +1,4 @@
+Generate a list of 5 realistic engineering tasks for a B2B SaaS project named "{project_name}".
+Context: Backend uses Python/Django, Frontend uses React.
+Format: [Component] - [Action] - [Detail]
+Example: Auth - Implement - JWT Token Refresh Logic

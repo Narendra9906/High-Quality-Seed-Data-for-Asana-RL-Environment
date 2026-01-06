@@ -1,0 +1,4 @@
+Generate a list of 5 operations tasks for a process named "{project_name}".
+Context: Improving internal efficiency.
+Format: [Process] - [Action]
+Example: Vendor Onboarding - Review legal contract template
