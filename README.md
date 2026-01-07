@@ -2,7 +2,7 @@
 I am going to create a realistic seed dataset simulating a company's Asana workspace.
 
 
-## **Complete Repository Structure - Detailed Explanation** 🌳
+## **Complete Repository Structure**
 ```
 asana-seed-data-generator/
 │
