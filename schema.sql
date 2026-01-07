@@ -1,21 +1,67 @@
--- Enable Foreign Keys
-PRAGMA foreign_keys = ON;
-
 -- ==============================
--- 1. ORGANIZATIONS & TEAMS (Strategy Layer)
+-- ASANA SEED DATA GENERATOR
+-- SQLite Compatible Schema
 -- ==============================
 
-CREATE TABLE IF NOT EXISTS organizations (
+DROP TABLE IF EXISTS task_tags;
+DROP TABLE IF EXISTS tags;
+DROP TABLE IF EXISTS custom_field_values;
+DROP TABLE IF EXISTS custom_field_definitions;
+DROP TABLE IF EXISTS comments;
+DROP TABLE IF EXISTS subtasks;
+DROP TABLE IF EXISTS tasks;
+DROP TABLE IF EXISTS sections;
+DROP TABLE IF EXISTS projects;
+DROP TABLE IF EXISTS team_memberships;
+DROP TABLE IF EXISTS users;
+
+-- Drop workstream tables
+DROP TABLE IF EXISTS ops_vendor_workstreams;
+DROP TABLE IF EXISTS ops_infrastructure_workstreams;
+DROP TABLE IF EXISTS ops_compliance_workstreams;
+DROP TABLE IF EXISTS ops_finance_workstreams;
+DROP TABLE IF EXISTS ops_customer_support_workstreams;
+DROP TABLE IF EXISTS ops_process_optimization_workstreams;
+DROP TABLE IF EXISTS operation_flow_initiatives;
+
+DROP TABLE IF EXISTS mkt_operations_workstreams;
+DROP TABLE IF EXISTS mkt_retention_workstreams;
+DROP TABLE IF EXISTS mkt_performance_workstreams;
+DROP TABLE IF EXISTS mkt_content_workstreams;
+DROP TABLE IF EXISTS mkt_growth_workstreams;
+DROP TABLE IF EXISTS mkt_product_launch_workstreams;
+DROP TABLE IF EXISTS mkt_brand_awareness_workstreams;
+DROP TABLE IF EXISTS marketing_initiatives;
+
+DROP TABLE IF EXISTS pd_dev_experience_workstreams;
+DROP TABLE IF EXISTS pd_security_compliance_workstreams;
+DROP TABLE IF EXISTS pd_api_integration_workstreams;
+DROP TABLE IF EXISTS pd_backend_scalability_workstreams;
+DROP TABLE IF EXISTS pd_mobile_revamp_workstreams;
+DROP TABLE IF EXISTS pd_feature_delivery_workstreams;
+DROP TABLE IF EXISTS pd_core_platform_workstreams;
+DROP TABLE IF EXISTS product_development_initiatives;
+
+DROP TABLE IF EXISTS teams;
+DROP TABLE IF EXISTS organizations;
+
+-- ==============================
+-- 1. ORGANIZATIONS TABLE
+-- ==============================
+CREATE TABLE organizations (
     organization_id TEXT PRIMARY KEY,
-    name TEXT,
+    name TEXT NOT NULL,
     domain TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE IF NOT EXISTS teams (
+-- ==============================
+-- 2. TEAMS TABLE
+-- ==============================
+CREATE TABLE teams (
     team_id TEXT PRIMARY KEY,
-    organization_id TEXT,
-    name TEXT,
+    organization_id TEXT NOT NULL,
+    name TEXT NOT NULL,
     team_type TEXT CHECK(team_type IN ('product', 'marketing', 'operations')),
     employee_count INTEGER,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -23,128 +69,582 @@ CREATE TABLE IF NOT EXISTS teams (
 );
 
 -- ==============================
--- 2. INITIATIVES & WORKSTREAMS (Your Custom Logic)
+-- 3. USERS TABLE
 -- ==============================
--- Note: SQLite does not support ENUM natively, using TEXT.
+CREATE TABLE users (
+    user_id TEXT PRIMARY KEY,
+    organization_id TEXT NOT NULL,
+    email TEXT UNIQUE NOT NULL,
+    first_name TEXT NOT NULL,
+    last_name TEXT NOT NULL,
+    full_name TEXT NOT NULL,
+    job_title TEXT,
+    department TEXT,
+    is_active INTEGER DEFAULT 1,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    last_login_at TIMESTAMP,
+    FOREIGN KEY (organization_id) REFERENCES organizations(organization_id) ON DELETE CASCADE
+);
 
-CREATE TABLE IF NOT EXISTS product_development_initiatives (
+-- ==============================
+-- 4. TEAM MEMBERSHIPS TABLE
+-- ==============================
+CREATE TABLE team_memberships (
+    membership_id TEXT PRIMARY KEY,
+    team_id TEXT NOT NULL,
+    user_id TEXT NOT NULL,
+    role TEXT CHECK(role IN ('member', 'lead', 'admin')) DEFAULT 'member',
+    joined_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (team_id) REFERENCES teams(team_id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,
+    UNIQUE(team_id, user_id)
+);
+
+-- ==============================
+-- 5. PRODUCT DEVELOPMENT INITIATIVES TABLE
+-- ==============================
+CREATE TABLE product_development_initiatives (
     initiative_id TEXT PRIMARY KEY,
-    team_id TEXT,
-    initiative_name TEXT,
-    initiative_type TEXT,
+    team_id TEXT NOT NULL,
+    initiative_name TEXT NOT NULL,
+    initiative_type TEXT CHECK(initiative_type IN ('platform', 'feature', 'infra', 'security')),
     objective TEXT,
     employee_capacity INTEGER DEFAULT 500,
     start_date DATE,
     end_date DATE,
-    status TEXT,
+    status TEXT CHECK(status IN ('planned', 'active', 'completed')) DEFAULT 'planned',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (team_id) REFERENCES teams(team_id) ON DELETE CASCADE
 );
 
--- (Generic Workstream Table to capture all your specific workstream tables for linking)
--- In a real scenario, we might keep your separate tables, but for the generator 
--- to link Projects to your workstreams, we need a unified reference or we handle it in code.
--- Below are the specific workstream tables you requested.
+-- ==============================
+-- 6. PRODUCT DEVELOPMENT WORKSTREAMS
+-- ==============================
 
-CREATE TABLE IF NOT EXISTS pd_core_platform_workstreams (
+-- Core Platform Workstreams
+CREATE TABLE pd_core_platform_workstreams (
     workstream_id TEXT PRIMARY KEY,
-    initiative_id TEXT,
-    workstream_name TEXT,
+    initiative_id TEXT NOT NULL,
+    workstream_name TEXT NOT NULL,
     focus_area TEXT,
     employee_capacity INTEGER,
     subgroups_count INTEGER,
     employees_per_subgroup INTEGER,
     lead_role TEXT,
-    priority TEXT,
-    status TEXT,
+    priority TEXT CHECK(priority IN ('low', 'medium', 'high')),
+    status TEXT CHECK(status IN ('planned', 'active', 'completed')),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (initiative_id) REFERENCES product_development_initiatives(initiative_id)
+    FOREIGN KEY (initiative_id) REFERENCES product_development_initiatives(initiative_id) ON DELETE CASCADE
 );
 
--- ... [Ideally, we would include all other workstream tables here: pd_feature_delivery, marketing, etc.]
--- ... [For brevity in this chat, assume all your CREATE TABLE statements for workstreams are here]
-
--- ==============================
--- 3. EXECUTION LAYER (Asana Standard Objects)
--- ==============================
-
-CREATE TABLE IF NOT EXISTS users (
-    user_id TEXT PRIMARY KEY,
-    organization_id TEXT,
-    email TEXT UNIQUE,
-    full_name TEXT,
-    job_title TEXT,
-    department TEXT, -- Links to your 'team_type'
-    avatar_url TEXT,
-    created_at TIMESTAMP,
-    FOREIGN KEY (organization_id) REFERENCES organizations(organization_id)
+-- Feature Delivery Workstreams
+CREATE TABLE pd_feature_delivery_workstreams (
+    workstream_id TEXT PRIMARY KEY,
+    initiative_id TEXT NOT NULL,
+    workstream_name TEXT NOT NULL,
+    focus_area TEXT,
+    employee_capacity INTEGER,
+    subgroups_count INTEGER,
+    employees_per_subgroup INTEGER,
+    lead_role TEXT,
+    priority TEXT CHECK(priority IN ('low', 'medium', 'high')),
+    status TEXT CHECK(status IN ('planned', 'active', 'completed')),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (initiative_id) REFERENCES product_development_initiatives(initiative_id) ON DELETE CASCADE
 );
 
-CREATE TABLE IF NOT EXISTS projects (
+-- Mobile Revamp Workstreams
+CREATE TABLE pd_mobile_revamp_workstreams (
+    workstream_id TEXT PRIMARY KEY,
+    initiative_id TEXT NOT NULL,
+    workstream_name TEXT NOT NULL,
+    focus_area TEXT,
+    employee_capacity INTEGER,
+    subgroups_count INTEGER,
+    employees_per_subgroup INTEGER,
+    lead_role TEXT,
+    priority TEXT CHECK(priority IN ('low', 'medium', 'high')),
+    status TEXT CHECK(status IN ('planned', 'active', 'completed')),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (initiative_id) REFERENCES product_development_initiatives(initiative_id) ON DELETE CASCADE
+);
+
+-- Backend Scalability Workstreams
+CREATE TABLE pd_backend_scalability_workstreams (
+    workstream_id TEXT PRIMARY KEY,
+    initiative_id TEXT NOT NULL,
+    workstream_name TEXT NOT NULL,
+    focus_area TEXT,
+    employee_capacity INTEGER,
+    subgroups_count INTEGER,
+    employees_per_subgroup INTEGER,
+    lead_role TEXT,
+    priority TEXT CHECK(priority IN ('low', 'medium', 'high')),
+    status TEXT CHECK(status IN ('planned', 'active', 'completed')),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (initiative_id) REFERENCES product_development_initiatives(initiative_id) ON DELETE CASCADE
+);
+
+-- API Integration Workstreams
+CREATE TABLE pd_api_integration_workstreams (
+    workstream_id TEXT PRIMARY KEY,
+    initiative_id TEXT NOT NULL,
+    workstream_name TEXT NOT NULL,
+    focus_area TEXT,
+    employee_capacity INTEGER,
+    subgroups_count INTEGER,
+    employees_per_subgroup INTEGER,
+    lead_role TEXT,
+    priority TEXT CHECK(priority IN ('low', 'medium', 'high')),
+    status TEXT CHECK(status IN ('planned', 'active', 'completed')),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (initiative_id) REFERENCES product_development_initiatives(initiative_id) ON DELETE CASCADE
+);
+
+-- Security Compliance Workstreams
+CREATE TABLE pd_security_compliance_workstreams (
+    workstream_id TEXT PRIMARY KEY,
+    initiative_id TEXT NOT NULL,
+    workstream_name TEXT NOT NULL,
+    focus_area TEXT,
+    employee_capacity INTEGER,
+    subgroups_count INTEGER,
+    employees_per_subgroup INTEGER,
+    lead_role TEXT,
+    priority TEXT CHECK(priority IN ('low', 'medium', 'high')),
+    status TEXT CHECK(status IN ('planned', 'active', 'completed')),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (initiative_id) REFERENCES product_development_initiatives(initiative_id) ON DELETE CASCADE
+);
+
+-- Developer Experience Workstreams
+CREATE TABLE pd_dev_experience_workstreams (
+    workstream_id TEXT PRIMARY KEY,
+    initiative_id TEXT NOT NULL,
+    workstream_name TEXT NOT NULL,
+    focus_area TEXT,
+    employee_capacity INTEGER,
+    subgroups_count INTEGER,
+    employees_per_subgroup INTEGER,
+    lead_role TEXT,
+    priority TEXT CHECK(priority IN ('low', 'medium', 'high')),
+    status TEXT CHECK(status IN ('planned', 'active', 'completed')),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (initiative_id) REFERENCES product_development_initiatives(initiative_id) ON DELETE CASCADE
+);
+
+-- ==============================
+-- 7. MARKETING INITIATIVES TABLE
+-- ==============================
+CREATE TABLE marketing_initiatives (
+    initiative_id TEXT PRIMARY KEY,
+    team_id TEXT NOT NULL,
+    initiative_name TEXT NOT NULL,
+    initiative_type TEXT CHECK(initiative_type IN ('branding', 'launch', 'growth', 'content', 'performance', 'retention', 'operations')),
+    objective TEXT,
+    employee_capacity INTEGER DEFAULT 500,
+    start_date DATE,
+    end_date DATE,
+    status TEXT CHECK(status IN ('planned', 'active', 'completed')) DEFAULT 'planned',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (team_id) REFERENCES teams(team_id) ON DELETE CASCADE
+);
+
+-- ==============================
+-- 8. MARKETING WORKSTREAMS
+-- ==============================
+
+-- Brand Awareness Workstreams
+CREATE TABLE mkt_brand_awareness_workstreams (
+    workstream_id TEXT PRIMARY KEY,
+    initiative_id TEXT NOT NULL,
+    workstream_name TEXT NOT NULL,
+    focus_area TEXT,
+    employee_capacity INTEGER,
+    subgroups_count INTEGER,
+    employees_per_subgroup INTEGER,
+    lead_role TEXT,
+    priority TEXT CHECK(priority IN ('low', 'medium', 'high')),
+    status TEXT CHECK(status IN ('planned', 'active', 'completed')),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (initiative_id) REFERENCES marketing_initiatives(initiative_id) ON DELETE CASCADE
+);
+
+-- Product Launch Workstreams
+CREATE TABLE mkt_product_launch_workstreams (
+    workstream_id TEXT PRIMARY KEY,
+    initiative_id TEXT NOT NULL,
+    workstream_name TEXT NOT NULL,
+    focus_area TEXT,
+    employee_capacity INTEGER,
+    subgroups_count INTEGER,
+    employees_per_subgroup INTEGER,
+    lead_role TEXT,
+    priority TEXT CHECK(priority IN ('low', 'medium', 'high')),
+    status TEXT CHECK(status IN ('planned', 'active', 'completed')),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (initiative_id) REFERENCES marketing_initiatives(initiative_id) ON DELETE CASCADE
+);
+
+-- Growth Workstreams
+CREATE TABLE mkt_growth_workstreams (
+    workstream_id TEXT PRIMARY KEY,
+    initiative_id TEXT NOT NULL,
+    workstream_name TEXT NOT NULL,
+    focus_area TEXT,
+    employee_capacity INTEGER,
+    subgroups_count INTEGER,
+    employees_per_subgroup INTEGER,
+    lead_role TEXT,
+    priority TEXT CHECK(priority IN ('low', 'medium', 'high')),
+    status TEXT CHECK(status IN ('planned', 'active', 'completed')),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (initiative_id) REFERENCES marketing_initiatives(initiative_id) ON DELETE CASCADE
+);
+
+-- Content Workstreams
+CREATE TABLE mkt_content_workstreams (
+    workstream_id TEXT PRIMARY KEY,
+    initiative_id TEXT NOT NULL,
+    workstream_name TEXT NOT NULL,
+    focus_area TEXT,
+    employee_capacity INTEGER,
+    subgroups_count INTEGER,
+    employees_per_subgroup INTEGER,
+    lead_role TEXT,
+    priority TEXT CHECK(priority IN ('low', 'medium', 'high')),
+    status TEXT CHECK(status IN ('planned', 'active', 'completed')),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (initiative_id) REFERENCES marketing_initiatives(initiative_id) ON DELETE CASCADE
+);
+
+-- Performance Workstreams
+CREATE TABLE mkt_performance_workstreams (
+    workstream_id TEXT PRIMARY KEY,
+    initiative_id TEXT NOT NULL,
+    workstream_name TEXT NOT NULL,
+    focus_area TEXT,
+    employee_capacity INTEGER,
+    subgroups_count INTEGER,
+    employees_per_subgroup INTEGER,
+    lead_role TEXT,
+    priority TEXT CHECK(priority IN ('low', 'medium', 'high')),
+    status TEXT CHECK(status IN ('planned', 'active', 'completed')),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (initiative_id) REFERENCES marketing_initiatives(initiative_id) ON DELETE CASCADE
+);
+
+-- Retention Workstreams
+CREATE TABLE mkt_retention_workstreams (
+    workstream_id TEXT PRIMARY KEY,
+    initiative_id TEXT NOT NULL,
+    workstream_name TEXT NOT NULL,
+    focus_area TEXT,
+    employee_capacity INTEGER,
+    subgroups_count INTEGER,
+    employees_per_subgroup INTEGER,
+    lead_role TEXT,
+    priority TEXT CHECK(priority IN ('low', 'medium', 'high')),
+    status TEXT CHECK(status IN ('planned', 'active', 'completed')),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (initiative_id) REFERENCES marketing_initiatives(initiative_id) ON DELETE CASCADE
+);
+
+-- Marketing Operations Workstreams
+CREATE TABLE mkt_operations_workstreams (
+    workstream_id TEXT PRIMARY KEY,
+    initiative_id TEXT NOT NULL,
+    workstream_name TEXT NOT NULL,
+    focus_area TEXT,
+    employee_capacity INTEGER,
+    subgroups_count INTEGER,
+    employees_per_subgroup INTEGER,
+    lead_role TEXT,
+    priority TEXT CHECK(priority IN ('low', 'medium', 'high')),
+    status TEXT CHECK(status IN ('planned', 'active', 'completed')),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (initiative_id) REFERENCES marketing_initiatives(initiative_id) ON DELETE CASCADE
+);
+
+-- ==============================
+-- 9. OPERATION FLOW INITIATIVES TABLE
+-- ==============================
+CREATE TABLE operation_flow_initiatives (
+    initiative_id TEXT PRIMARY KEY,
+    team_id TEXT NOT NULL,
+    initiative_name TEXT NOT NULL,
+    initiative_type TEXT CHECK(initiative_type IN ('process', 'customer_support', 'finance', 'compliance', 'infrastructure', 'vendor')),
+    objective TEXT,
+    employee_capacity INTEGER DEFAULT 500,
+    start_date DATE,
+    end_date DATE,
+    status TEXT CHECK(status IN ('planned', 'active', 'completed')) DEFAULT 'planned',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (team_id) REFERENCES teams(team_id) ON DELETE CASCADE
+);
+
+-- ==============================
+-- 10. OPERATIONS WORKSTREAMS
+-- ==============================
+
+-- Process Optimization Workstreams
+CREATE TABLE ops_process_optimization_workstreams (
+    workstream_id TEXT PRIMARY KEY,
+    initiative_id TEXT NOT NULL,
+    workstream_name TEXT NOT NULL,
+    focus_area TEXT,
+    employee_capacity INTEGER,
+    subgroups_count INTEGER,
+    employees_per_subgroup INTEGER,
+    lead_role TEXT,
+    priority TEXT CHECK(priority IN ('low', 'medium', 'high')),
+    status TEXT CHECK(status IN ('planned', 'active', 'completed')),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (initiative_id) REFERENCES operation_flow_initiatives(initiative_id) ON DELETE CASCADE
+);
+
+-- Customer Support Workstreams
+CREATE TABLE ops_customer_support_workstreams (
+    workstream_id TEXT PRIMARY KEY,
+    initiative_id TEXT NOT NULL,
+    workstream_name TEXT NOT NULL,
+    focus_area TEXT,
+    employee_capacity INTEGER,
+    subgroups_count INTEGER,
+    employees_per_subgroup INTEGER,
+    lead_role TEXT,
+    priority TEXT CHECK(priority IN ('low', 'medium', 'high')),
+    status TEXT CHECK(status IN ('planned', 'active', 'completed')),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (initiative_id) REFERENCES operation_flow_initiatives(initiative_id) ON DELETE CASCADE
+);
+
+-- Finance Workstreams
+CREATE TABLE ops_finance_workstreams (
+    workstream_id TEXT PRIMARY KEY,
+    initiative_id TEXT NOT NULL,
+    workstream_name TEXT NOT NULL,
+    focus_area TEXT,
+    employee_capacity INTEGER,
+    subgroups_count INTEGER,
+    employees_per_subgroup INTEGER,
+    lead_role TEXT,
+    priority TEXT CHECK(priority IN ('low', 'medium', 'high')),
+    status TEXT CHECK(status IN ('planned', 'active', 'completed')),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (initiative_id) REFERENCES operation_flow_initiatives(initiative_id) ON DELETE CASCADE
+);
+
+-- Compliance Workstreams
+CREATE TABLE ops_compliance_workstreams (
+    workstream_id TEXT PRIMARY KEY,
+    initiative_id TEXT NOT NULL,
+    workstream_name TEXT NOT NULL,
+    focus_area TEXT,
+    employee_capacity INTEGER,
+    subgroups_count INTEGER,
+    employees_per_subgroup INTEGER,
+    lead_role TEXT,
+    priority TEXT CHECK(priority IN ('low', 'medium', 'high')),
+    status TEXT CHECK(status IN ('planned', 'active', 'completed')),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (initiative_id) REFERENCES operation_flow_initiatives(initiative_id) ON DELETE CASCADE
+);
+
+-- Infrastructure Workstreams
+CREATE TABLE ops_infrastructure_workstreams (
+    workstream_id TEXT PRIMARY KEY,
+    initiative_id TEXT NOT NULL,
+    workstream_name TEXT NOT NULL,
+    focus_area TEXT,
+    employee_capacity INTEGER,
+    subgroups_count INTEGER,
+    employees_per_subgroup INTEGER,
+    lead_role TEXT,
+    priority TEXT CHECK(priority IN ('low', 'medium', 'high')),
+    status TEXT CHECK(status IN ('planned', 'active', 'completed')),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (initiative_id) REFERENCES operation_flow_initiatives(initiative_id) ON DELETE CASCADE
+);
+
+-- Vendor Workstreams
+CREATE TABLE ops_vendor_workstreams (
+    workstream_id TEXT PRIMARY KEY,
+    initiative_id TEXT NOT NULL,
+    workstream_name TEXT NOT NULL,
+    focus_area TEXT,
+    employee_capacity INTEGER,
+    subgroups_count INTEGER,
+    employees_per_subgroup INTEGER,
+    lead_role TEXT,
+    priority TEXT CHECK(priority IN ('low', 'medium', 'high')),
+    status TEXT CHECK(status IN ('planned', 'active', 'completed')),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (initiative_id) REFERENCES operation_flow_initiatives(initiative_id) ON DELETE CASCADE
+);
+
+-- ==============================
+-- 11. PROJECTS TABLE
+-- ==============================
+CREATE TABLE projects (
     project_id TEXT PRIMARY KEY,
-    workstream_id TEXT, -- LINKS YOUR STRATEGY TO EXECUTION
-    team_id TEXT,
-    owner_id TEXT,
-    name TEXT,
+    team_id TEXT NOT NULL,
+    workstream_id TEXT,
+    name TEXT NOT NULL,
     description TEXT,
-    status TEXT CHECK(status IN ('on_track', 'at_risk', 'off_track', 'on_hold', 'completed')),
+    color TEXT,
+    status TEXT CHECK(status IN ('active', 'on_hold', 'completed', 'archived')) DEFAULT 'active',
+    privacy TEXT CHECK(privacy IN ('public', 'private')) DEFAULT 'public',
+    owner_id TEXT,
+    start_date DATE,
     due_date DATE,
-    created_at TIMESTAMP,
-    archived BOOLEAN DEFAULT 0,
-    FOREIGN KEY (team_id) REFERENCES teams(team_id),
-    FOREIGN KEY (owner_id) REFERENCES users(user_id)
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP,
+    FOREIGN KEY (team_id) REFERENCES teams(team_id) ON DELETE CASCADE,
+    FOREIGN KEY (owner_id) REFERENCES users(user_id) ON DELETE SET NULL
 );
 
-CREATE TABLE IF NOT EXISTS sections (
+-- ==============================
+-- 12. SECTIONS TABLE
+-- ==============================
+CREATE TABLE sections (
     section_id TEXT PRIMARY KEY,
-    project_id TEXT,
-    name TEXT,
-    created_at TIMESTAMP,
+    project_id TEXT NOT NULL,
+    name TEXT NOT NULL,
+    position INTEGER DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (project_id) REFERENCES projects(project_id) ON DELETE CASCADE
 );
 
-CREATE TABLE IF NOT EXISTS tasks (
+-- ==============================
+-- 13. TASKS TABLE
+-- ==============================
+CREATE TABLE tasks (
     task_id TEXT PRIMARY KEY,
-    project_id TEXT,
+    project_id TEXT NOT NULL,
     section_id TEXT,
-    assignee_id TEXT,
-    name TEXT,
+    name TEXT NOT NULL,
     description TEXT,
-    priority TEXT CHECK(priority IN ('low', 'medium', 'high')),
+    assignee_id TEXT,
     due_date DATE,
-    completed BOOLEAN DEFAULT 0,
+    start_date DATE,
+    completed INTEGER DEFAULT 0,
     completed_at TIMESTAMP,
-    created_at TIMESTAMP,
+    priority TEXT CHECK(priority IN ('low', 'medium', 'high')),
+    created_by TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP,
     FOREIGN KEY (project_id) REFERENCES projects(project_id) ON DELETE CASCADE,
-    FOREIGN KEY (assignee_id) REFERENCES users(user_id)
+    FOREIGN KEY (section_id) REFERENCES sections(section_id) ON DELETE SET NULL,
+    FOREIGN KEY (assignee_id) REFERENCES users(user_id) ON DELETE SET NULL,
+    FOREIGN KEY (created_by) REFERENCES users(user_id) ON DELETE SET NULL
 );
 
-CREATE TABLE IF NOT EXISTS comments (
+-- ==============================
+-- 14. SUBTASKS TABLE
+-- ==============================
+CREATE TABLE subtasks (
+    subtask_id TEXT PRIMARY KEY,
+    parent_task_id TEXT NOT NULL,
+    name TEXT NOT NULL,
+    description TEXT,
+    assignee_id TEXT,
+    due_date DATE,
+    completed INTEGER DEFAULT 0,
+    completed_at TIMESTAMP,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (parent_task_id) REFERENCES tasks(task_id) ON DELETE CASCADE,
+    FOREIGN KEY (assignee_id) REFERENCES users(user_id) ON DELETE SET NULL
+);
+
+-- ==============================
+-- 15. COMMENTS TABLE
+-- ==============================
+CREATE TABLE comments (
     comment_id TEXT PRIMARY KEY,
-    task_id TEXT,
-    user_id TEXT,
-    text_content TEXT,
-    created_at TIMESTAMP,
+    task_id TEXT NOT NULL,
+    author_id TEXT NOT NULL,
+    content TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP,
     FOREIGN KEY (task_id) REFERENCES tasks(task_id) ON DELETE CASCADE,
-    FOREIGN KEY (user_id) REFERENCES users(user_id)
+    FOREIGN KEY (author_id) REFERENCES users(user_id) ON DELETE CASCADE
 );
 
 -- ==============================
--- 4. SEED DATA (Your Custom Inserts)
+-- 16. CUSTOM FIELD DEFINITIONS TABLE
 -- ==============================
+CREATE TABLE custom_field_definitions (
+    field_id TEXT PRIMARY KEY,
+    project_id TEXT NOT NULL,
+    name TEXT NOT NULL,
+    field_type TEXT CHECK(field_type IN ('text', 'number', 'enum', 'date', 'people')) NOT NULL,
+    enum_options TEXT,  -- JSON array for enum options
+    is_required INTEGER DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (project_id) REFERENCES projects(project_id) ON DELETE CASCADE
+);
 
-INSERT OR IGNORE INTO organizations (organization_id, name, domain)
-VALUES ('org_1', 'Aasna Technologies', 'aasna.tech');
+-- ==============================
+-- 17. CUSTOM FIELD VALUES TABLE
+-- ==============================
+CREATE TABLE custom_field_values (
+    value_id TEXT PRIMARY KEY,
+    task_id TEXT NOT NULL,
+    field_id TEXT NOT NULL,
+    text_value TEXT,
+    number_value REAL,
+    date_value DATE,
+    enum_value TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (task_id) REFERENCES tasks(task_id) ON DELETE CASCADE,
+    FOREIGN KEY (field_id) REFERENCES custom_field_definitions(field_id) ON DELETE CASCADE,
+    UNIQUE(task_id, field_id)
+);
 
-INSERT OR IGNORE INTO teams (team_id, organization_id, name, team_type, employee_count)
-VALUES 
-('team_pd', 'org_1', 'Product Development Team', 'product', 500),
-('team_mkt', 'org_1', 'Marketing Team', 'marketing', 100),
-('team_ops', 'org_1', 'Operation Flow Team', 'operations', 3000);
+-- ==============================
+-- 18. TAGS TABLE
+-- ==============================
+CREATE TABLE tags (
+    tag_id TEXT PRIMARY KEY,
+    organization_id TEXT NOT NULL,
+    name TEXT NOT NULL,
+    color TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (organization_id) REFERENCES organizations(organization_id) ON DELETE CASCADE
+);
 
--- Insert Initiatives (Subset for demo)
-INSERT OR IGNORE INTO product_development_initiatives VALUES
-('pd_init_1', 'team_pd', 'Core Platform Modernization', 'platform', 'Upgrade core systems', 500, '2025-07-01', '2025-12-31', 'active', CURRENT_TIMESTAMP);
+-- ==============================
+-- 19. TASK-TAG ASSOCIATIONS TABLE
+-- ==============================
+CREATE TABLE task_tags (
+    task_tag_id TEXT PRIMARY KEY,
+    task_id TEXT NOT NULL,
+    tag_id TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (task_id) REFERENCES tasks(task_id) ON DELETE CASCADE,
+    FOREIGN KEY (tag_id) REFERENCES tags(tag_id) ON DELETE CASCADE,
+    UNIQUE(task_id, tag_id)
+);
 
-INSERT OR IGNORE INTO pd_core_platform_workstreams VALUES
-('cp_ws_1','pd_init_1','Architecture Refactor','Core system design',100,5,20,'Principal Engineer','high','active',CURRENT_TIMESTAMP);
+-- ==============================
+-- CREATE INDEXES FOR PERFORMANCE
+-- ==============================
+CREATE INDEX idx_users_org ON users(organization_id);
+CREATE INDEX idx_users_email ON users(email);
+CREATE INDEX idx_team_memberships_team ON team_memberships(team_id);
+CREATE INDEX idx_team_memberships_user ON team_memberships(user_id);
+CREATE INDEX idx_projects_team ON projects(team_id);
+CREATE INDEX idx_projects_owner ON projects(owner_id);
+CREATE INDEX idx_sections_project ON sections(project_id);
+CREATE INDEX idx_tasks_project ON tasks(project_id);
+CREATE INDEX idx_tasks_section ON tasks(section_id);
+CREATE INDEX idx_tasks_assignee ON tasks(assignee_id);
+CREATE INDEX idx_tasks_due_date ON tasks(due_date);
+CREATE INDEX idx_tasks_completed ON tasks(completed);
+CREATE INDEX idx_subtasks_parent ON subtasks(parent_task_id);
+CREATE INDEX idx_comments_task ON comments(task_id);
+CREATE INDEX idx_comments_author ON comments(author_id);
+CREATE INDEX idx_custom_field_values_task ON custom_field_values(task_id);
+CREATE INDEX idx_task_tags_task ON task_tags(task_id);
+CREATE INDEX idx_task_tags_tag ON task_tags(tag_id);
